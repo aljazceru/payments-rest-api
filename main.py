@@ -188,7 +188,7 @@ async def periodic_sync_check():
                 
                 # Attempt resync with progressively longer timeouts based on consecutive failures
                 timeout = min(5 + (_consecutive_sync_failures * 2), 30)  # Increase timeout up to 30 seconds
-                if _payment_handler.wait_for_sync(timeout_seconds=timeout):
+                if await _payment_handler.wait_for_sync(timeout_seconds=timeout):
                     logger.info("SDK resync successful")
                     _last_sync_time = time.time()
                     _consecutive_sync_failures = 0

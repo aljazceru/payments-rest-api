@@ -47,6 +47,7 @@ import time
 import logging
 from pprint import pprint
 import threading
+import asyncio
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -281,7 +282,7 @@ class PaymentHandler:
                 logger.info("Breez SDK connected successfully.")
                 
                 # Shorter sync timeout for initial connection
-                self.wait_for_sync(timeout_seconds=10)
+                self._wait_for_sync_blocking(timeout_seconds=10)
                 
             except Exception as e:
                 logger.error(f"Failed to connect to Breez SDK: {e}")
@@ -290,15 +291,27 @@ class PaymentHandler:
             self._initialized = True
             logger.debug("PaymentHandler initialization complete")
 
-    def wait_for_sync(self, timeout_seconds: int = 10) -> bool:
-        """Wait for the SDK to sync before proceeding."""
-        logger.debug(f"Waiting for sync (timeout={timeout_seconds}s)")
+    def _wait_for_sync_blocking(self, timeout_seconds: int = 10) -> bool:
+        """Blocking helper to wait for the SDK to sync before proceeding."""
+        logger.debug(f"Waiting for sync (timeout={timeout_seconds}s) [blocking]")
         start_time = time.time()
         while time.time() - start_time < timeout_seconds:
             if self.listener.is_synced():
                 logger.debug("SDK synced successfully")
                 return True
             time.sleep(0.1)  # Shorter sleep interval
+        logger.warning("SDK sync timeout")
+        return False
+
+    async def wait_for_sync(self, timeout_seconds: int = 10) -> bool:
+        """Asynchronously wait for the SDK to sync before proceeding."""
+        logger.debug(f"Waiting for sync (timeout={timeout_seconds}s) [async]")
+        start_time = time.time()
+        while time.time() - start_time < timeout_seconds:
+            if self.listener.is_synced():
+                logger.debug("SDK synced successfully")
+                return True
+            await asyncio.sleep(0.1)
         logger.warning("SDK sync timeout")
         return False
 
